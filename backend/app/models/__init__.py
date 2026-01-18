@@ -1,3 +1,0 @@
-"""
-Cortex - Models Package
-"""

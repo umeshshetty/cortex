@@ -92,9 +92,38 @@ ON EACH [e.name, e.description];
 // (:Entity)-[:CONNECTED_TO]->(:Entity)
 // (:Entity)-[:WORKS_ON]->(:Entity {type: 'Project'})
 // (:Entity {type: 'Person'})-[:REPORTS_TO]->(:Entity {type: 'Person'})
+//
+// Critical Properties:
+// Entity {type: 'Person'} key: 'last_interaction_at' (DateTime) - Used for O(1) Ghost Detection
 
 // Task Hierarchy:
 // (:Task)-[:HAS_SUBTASK]->(:Task)
+
+// ============================================================================
+// COGNITIVE SUBSTRATE (Section 6)
+// ============================================================================
+
+// Semantic Graph (Goals & Projects)
+// (:Project)-[:ALIGNS_WITH]->(:Goal)
+// (:Goal)-[:HAS_PARENT]->(:Goal)
+
+CREATE CONSTRAINT goal_id IF NOT EXISTS 
+FOR (g:Goal) REQUIRE g.id IS UNIQUE;
+
+CREATE CONSTRAINT project_id IF NOT EXISTS 
+FOR (p:Project) REQUIRE p.id IS UNIQUE;
+
+CREATE INDEX goal_status IF NOT EXISTS 
+FOR (g:Goal) ON (g.status);
+
+// Conscious State (Trend Awareness)
+// (:User)-[:HAS_STATE]->(:UserState)
+
+CREATE CONSTRAINT user_state_id IF NOT EXISTS 
+FOR (s:UserState) REQUIRE s.id IS UNIQUE;
+
+// Relationship documentation
+// (:Entity {type: 'Project'})-[:ALIGNS_WITH]->(:Entity {type: 'Goal'})
 // (:Task)-[:BLOCKS]->(:Task)
 
 // Serendipity:

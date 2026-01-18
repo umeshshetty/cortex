@@ -23,6 +23,7 @@ services:
       - redis
     volumes:
       - ./backend:/app
+      - ./database:/app/database
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - cortex-network
@@ -58,64 +59,6 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
-    networks:
-      - cortex-network
-
-  # ==========================================================================
-  # Frontend (React/Vite)
-  # ==========================================================================
-  frontend:
-    build: ./frontend
-    container_name: cortex-frontend
-    ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:8000
-    depends_on:
-      - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    networks:
-      - cortex-network
-
-  # ==========================================================================
-  # Celery Worker (The Subconscious)
-  # ==========================================================================
-  celery-worker:
-    build: ./backend
-    container_name: cortex-celery-worker
-    environment:
-      - NEO4J_URI=bolt://neo4j:7687
-      - NEO4J_USER=neo4j
-      - NEO4J_PASSWORD=cortex123
-      - REDIS_URL=redis://redis:6379/0
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
-    depends_on:
-      - neo4j
-      - redis
-    volumes:
-      - ./backend:/app
-    command: celery -A app.workers.worker worker --loglevel=info
-    networks:
-      - cortex-network
-
-  # ==========================================================================
-  # Celery Beat (Scheduler)
-  # ==========================================================================
-  celery-beat:
-    build: ./backend
-    container_name: cortex-celery-beat
-    environment:
-      - NEO4J_URI=bolt://neo4j:7687
-      - NEO4J_USER=neo4j
-      - NEO4J_PASSWORD=cortex123
-      - REDIS_URL=redis://redis:6379/0
-    depends_on:
-      - redis
-    volumes:
-      - ./backend:/app
-    command: celery -A app.workers.worker beat --loglevel=info
     networks:
       - cortex-network
 
@@ -165,9 +108,9 @@ volumes:
   redis_data:
   langfuse_postgres_data:
 
-    # ==========================================================================
-    # Networks
-    # ==========================================================================
+# ==========================================================================
+# Networks
+# ==========================================================================
 networks:
   cortex-network:
     driver: bridge

@@ -1,138 +1,82 @@
-# Cortex 🧠
+# Cortex 🧠 (Clean Slate)
 
-**Personal Cognitive Assistant** - A brain-like AI system that serves as a true extension of the human mind.
+**Personal Cognitive Assistant** - A brain-like AI system.
 
-## Architecture
+> [!NOTE]
+> This repository has been reset to a clean slate. It currently contains the **infrastructure backbone** only.
+
+## 🏗 Architecture (Current State)
+
+The system is stripped down to its core infrastructure, ready for a new implementation.
 
 ```
 /cortex
 ├── /backend
 │   ├── /app
-│   │   ├── main.py              # FastAPI Entry Point
-│   │   ├── dependencies.py      # DB Connections (Neo4j, Redis)
-│   │   ├── /agents              # The "Cognitive Modules"
-│   │   │   ├── router.py        # Intent Classification (Gateway)
-│   │   │   ├── analyst_agent.py # RAG & Graph Query Logic
-│   │   │   ├── social_agent.py  # People & Relationship Logic
-│   │   │   └── scheduler_agent.py # Calendar & Reminders
 │   │   ├── /core
-│   │   │   ├── config.py        # Env variables
-│   │   │   └── prompts.py       # Centralized System Prompts
-│   │   ├── /services
-│   │   │   ├── graph_service.py # Neo4j Cypher Helpers
-│   │   │   ├── vector_service.py # Embedding Generation
-│   │   │   └── consolidation.py # The "Sleep" Cycle
-│   │   └── /models
-│   │       ├── api_schemas.py   # Pydantic Models for API
-│   │       └── graph_schemas.py # Node/Edge Definitions
+│   │   │   ├── config.py        # Environment Config
+│   │   │   └── llm_tier.py      # Basic LLM Client + Langfuse
+│   │   └── main.py              # Minimal FastAPI Entry Point
 │   ├── Dockerfile
 │   └── requirements.txt
 │
-├── /frontend                    # React/TypeScript (Vite)
-│   ├── /src
-│   │   ├── /components
-│   │   │   ├── Dashboard.tsx
-│   │   │   ├── ClarificationQueue.tsx
-│   │   │   └── GraphVisualizer.tsx
-│   │   ├── /hooks
-│   │   │   └── useAgent.ts
-│   │   └── /api
-│   │       └── client.ts
-│   └── package.json
-│
 ├── /database
-│   └── schema.cypher            # Neo4j Schema
+│   └── schema.cypher            # Neo4j Schema (Preserved)
 │
-└── docker-compose.yml           # Orchestration
+└── docker-compose.yml           # Core Infrastructure
 ```
 
-## Tech Stack
+## 🛠 Infrastructure Stack
 
-| Component | Technology |
-|-----------|------------|
-| Backend   | FastAPI (Async) |
-| LLM       | Ollama (llama3.3:70b) |
-| Graph DB  | Neo4j 5.x (with Vector Index) |
-| Cache     | Redis (Working Memory) |
-| Frontend  | React + TypeScript + Vite |
-| Orchestration | LangGraph |
+| Component | Status | Access |
+|-----------|--------|--------|
+| **Backend** | Minimal (FastAPI) | `http://localhost:8000` |
+| **Neo4j** | Running | `bolt://localhost:7687` (Browser: `:7474`) |
+| **Redis** | Running | `localhost:6379` |
+| **Langfuse** | Running | `http://localhost:3001` |
 
-## Quick Start
+## 🚀 Quick Start
 
-### Option 1: Docker Compose (Recommended)
+### 1. Prerequisites
+- Docker & Docker Compose
+- OpenAI API Key
+
+### 2. Configuration
+Create a `.env` file in `backend/`:
 
 ```bash
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f backend
+cp backend/.env.example backend/.env
 ```
 
-### Option 2: Local Development
+Edit `backend/.env` and add your keys:
+```ini
+OPENAI_API_KEY=sk-...
+LANGFUSE_PUBLIC_KEY=pk-...
+LANGFUSE_SECRET_KEY=sk-...
+```
 
+### 3. Start System
 ```bash
-# 1. Start Neo4j
-docker run -d --name cortex-neo4j \
-  -p 7474:7474 -p 7687:7687 \
-  -e NEO4J_AUTH=neo4j/cortex123 \
-  neo4j:5.15-community
-
-# 2. Start Redis
-docker run -d --name cortex-redis -p 6379:6379 redis:7-alpine
-
-# 3. Start Ollama
-ollama serve
-
-# 4. Backend
-cd backend
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --reload --port 8000
-
-# 5. Frontend
-cd frontend
-npm install
-npm run dev
+docker-compose up -d --build
 ```
 
-### Access
+### 4. Verify
+Check system health:
+```bash
+curl http://localhost:8000/health
+# {"status":"healthy","version":"2.0.0"}
+```
 
-- **Frontend**: http://localhost:3000
-- **API Docs**: http://localhost:8000/docs
-- **Neo4j Browser**: http://localhost:7474
+Test LLM connection (requires API Key):
+```bash
+curl -X POST -H "Content-Type: application/json" \
+  -d '{"message": "Hello"}' \
+  http://localhost:8000/test/chat
+```
 
-## API Endpoints
+## 📝 Next Steps
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/think` | POST | Process a thought |
-| `/api/classify` | GET | Debug intent classification |
-| `/api/brain/stats` | GET | Brain statistics |
-| `/api/brain/search` | GET | Semantic search |
-| `/api/brain/people` | GET | Person profiles |
-| `/api/graph` | GET | Knowledge graph data |
-| `/health` | GET | Health check |
-
-## Core Concepts
-
-### Biological Analogues
-
-- **Perception** (Gateway): `router.py` - Intent classification
-- **Memory** (Hippocampus): Neo4j + Vector Index - Hybrid memory
-- **Cognition** (Frontal Lobe): LangGraph agents - Reasoning
-- **Action** (Motor Cortex): Task execution
-
-### The Double Loop
-
-Every task is analyzed for its contribution to personal growth (Skills & Goals).
-
-### Neurosymbolic Memory
-
-- **Vector Search**: Semantic similarity ("things like X")
-- **Graph Search**: Relationship traversal (A→B→C)
-
-## License
-
-MIT
+This is a blank canvas. To build the new Cortex:
+1.  **Frontend**: Initialize a new frontend project in `/frontend`.
+2.  **Agents**: Add new agent logic to `backend/app/agents`.
+3.  **Memory**: Implement graph/vector storage logic.

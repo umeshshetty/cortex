@@ -1,0 +1,20 @@
+
+# Environment Variables
+.env
+backend/.env
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# System
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+build/

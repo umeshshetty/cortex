@@ -1,0 +1,136 @@
+.graph-visualizer {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    color: #e2e8f0;
+}
+
+.graph-header {
+    margin-bottom: 1rem;
+}
+
+.graph-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem;
+}
+
+.graph-header p {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.graph-container {
+    position: relative;
+    display: flex;
+    gap: 1rem;
+}
+
+.graph-container canvas {
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid #334155;
+    border-radius: 0.75rem;
+    cursor: crosshair;
+}
+
+.node-details {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    width: 200px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid #475569;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.node-details h3 {
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+    word-break: break-word;
+}
+
+.node-type {
+    display: inline-block;
+    font-size: 0.75rem;
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+}
+
+.node-details pre {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    overflow: auto;
+    max-height: 150px;
+}
+
+.graph-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #334155;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #94a3b8;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.legend-dot.thought {
+    background: #6366f1;
+}
+
+.legend-dot.person {
+    background: #3b82f6;
+}
+
+.legend-dot.project {
+    background: #a855f7;
+}
+
+.legend-dot.topic {
+    background: #22c55e;
+}
+
+/* Loading State */
+.graph-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: #64748b;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #334155;
+    border-top-color: #818cf8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

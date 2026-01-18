@@ -49,6 +49,21 @@ class Settings(BaseSettings):
     # ==========================================================================
     REDIS_URL: str = "redis://localhost:6379/0"
     WORKING_MEMORY_TTL: int = 3600  # 1 hour
+
+    # ==========================================================================
+    # TimeDB (Postgres)
+    # ==========================================================================
+    POSTGRES_USER: str = "cortex"
+    POSTGRES_PASSWORD: str = "memory_key"
+    POSTGRES_SERVER: str = "memory-db"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "cortex_memory"
+
+    @property
+    def DATABASE_URL(self) -> str:
+        """Construct AsyncPG URL from settings."""
+        return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
     
     # ==========================================================================
     # LLM Configuration

@@ -21,6 +21,7 @@ services:
     depends_on:
       - neo4j
       - redis
+      - memory-db
     volumes:
       - ./backend:/app
       - ./database:/app/database
@@ -47,6 +48,28 @@ services:
       - ./database:/import
     networks:
       - cortex-network
+
+  # ==========================================================================
+  # TimeDB (Postgres - Episodic Memory)
+  # ==========================================================================
+  memory-db:
+    image: postgres:15-alpine
+    container_name: cortex-memory-db
+    environment:
+      - POSTGRES_USER=cortex
+      - POSTGRES_PASSWORD=memory_key
+      - POSTGRES_DB=cortex_memory
+    volumes:
+      - memory_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - cortex-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U cortex -d cortex_memory" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # ==========================================================================
   # Redis (Working Memory Cache)
@@ -106,11 +129,12 @@ volumes:
   neo4j_data:
   neo4j_logs:
   redis_data:
+  memory_db_data:
   langfuse_postgres_data:
 
-# ==========================================================================
-# Networks
-# ==========================================================================
+    # ==========================================================================
+    # Networks
+    # ==========================================================================
 networks:
   cortex-network:
     driver: bridge

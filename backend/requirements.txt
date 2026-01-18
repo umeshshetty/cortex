@@ -10,7 +10,8 @@ python-dotenv>=1.0.0
 # Database
 neo4j>=5.15.0
 redis>=5.0.0
-celery>=5.3.0
+sqlalchemy>=2.0.0
+asyncpg>=0.29.0
 
 # LangChain & LLM
 langchain>=0.1.0

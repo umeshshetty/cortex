@@ -23,6 +23,26 @@ async def lifespan(app: FastAPI):
     await init_db()  # Initialize TimeDB (Postgres Tables)
     await graph_service.connect() # Initialize GraphDB (Neo4j)
     await vector_service.create_vector_index() # Initialize Vector Index
+    
+    # Initialize Digital Twin Schema & Seed (Idempotent)
+    # In production, we might want to separate seeding, but for demo/dev it's fine here.
+    try:
+        # Load Schema
+        with open("/app/database/schema.cypher", "r") as f:
+             queries = f.read().split(";")
+             for q in queries:
+                 if q.strip(): await graph_service.execute_query(q)
+                 
+        # Load Seed Data
+        with open("/app/database/seed_topology.cypher", "r") as f:
+             queries = f.read().split(";")
+             for q in queries:
+                 if q.strip(): await graph_service.execute_query(q)
+                 
+        print("🌐 Digital Twin Topology Initialized.")
+    except Exception as e:
+        print(f"⚠️ Topology Init Failed: {e}")
+
     yield
     # Shutdown
     print("😴 Cortex shutting down...")

@@ -95,12 +95,14 @@ class MemoryService:
         
         // Traverse to find context
         MATCH (thought)-[:MENTIONS]->(entity:Entity)
+        OPTIONAL MATCH (thought)-[:TRIGGERED_REFLECTION]->(reflection:Reflection)
         
         // Return aggregated result
         RETURN 
             thought.content AS thought_content,
             score AS similarity,
-            collect(entity.name) AS related_entities
+            collect(DISTINCT entity.name) AS related_entities,
+            collect(DISTINCT reflection.content) AS reflections
         """
         return await graph_service.execute_query(cypher, {"embedding": embedding})
 

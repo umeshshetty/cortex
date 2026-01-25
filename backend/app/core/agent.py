@@ -28,7 +28,14 @@ async def search_memory(query: str) -> str:
     for i, mem in enumerate(results):
         content = mem.get("thought_content", "Unknown")
         entities = mem.get("related_entities", [])
-        context_str += f"Result {i+1}: {content} (Related: {', '.join(entities)})\n"
+        reflections = mem.get("reflections", [])
+        
+        context_str += f"Result {i+1}: {content}\n"
+        if entities:
+            context_str += f"  - Related: {', '.join(entities)}\n"
+        if reflections:
+            context_str += f"  - Auto-Reflections (Clarifying Questions): {', '.join(reflections)}\n"
+        context_str += "\n"
     
     return context_str
 
@@ -41,8 +48,8 @@ async def summarize_project(project_name: str) -> str:
     from app.services.graph_service import graph_service
     
     cypher = """
-    MATCH (p:Entity {type: 'Project'})<-[:MENTIONS]-(t:Thought)
-    WHERE p.name CONTAINS $project
+    MATCH (e:Entity)<-[:MENTIONS]-(t:Thought)
+    WHERE toLower(e.name) CONTAINS toLower($project)
     RETURN t.content AS note, t.timestamp AS time
     ORDER BY t.timestamp DESC
     LIMIT 20

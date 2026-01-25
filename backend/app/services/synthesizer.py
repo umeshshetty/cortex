@@ -6,6 +6,7 @@ Connects the 'Memory' (Retriever) to the 'voice' (LLM).
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from app.core.agent import cortex_agent
+from app.services.profile_service import profile_service
 import re
 
 COT_SYSTEM_PROMPT = """You are Cortex.
@@ -32,9 +33,18 @@ class SynthesizerService:
         """
         print(f"🤖 Agent: Processing '{query}'...")
         
+        # 1. Fetch Profile
+        user_profile = await profile_service.get_profile()
+        profile_context = ""
+        if user_profile:
+             profile_context = f"User Role: {user_profile.role}\nBio: {user_profile.bio}\nTraits: {', '.join(user_profile.traits)}"
+        
+        # 2. Inject Context
+        full_system_prompt = f"{COT_SYSTEM_PROMPT}\n\nUSER CONTEXT:\n{profile_context}"
+
         # Invoke Agent with System Prompt
         inputs = {"messages": [
-            SystemMessage(content=COT_SYSTEM_PROMPT),
+            SystemMessage(content=full_system_prompt),
             HumanMessage(content=query)
         ]}
         result = await cortex_agent.ainvoke(inputs)
@@ -56,6 +66,7 @@ class SynthesizerService:
         try:
             from app.services.graph_service import graph_service
             import uuid
+            from datetime import datetime
             
             user_msg_id = str(uuid.uuid4())
             ai_msg_id = str(uuid.uuid4())
@@ -80,6 +91,36 @@ class SynthesizerService:
             })
         except Exception as e:
             print(f"⚠️ Failed to save chat history: {e}")
+            
+        # Unified Search: Auto-Ingest Chat as Memories
+        try:
+             import json
+             import redis.asyncio as redis
+             from app.core.config import settings
+             
+             QUEUE_NAME = "cortex_memory_queue"
+             redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+             
+             # Ingest User Query
+             task_user = {
+                 "note_id": user_msg_id, # Use UUID
+                 "content": f"User said: {query}",
+                 "source": "chat_user",
+                 "timestamp": datetime.now().isoformat()
+             }
+             await redis_client.lpush(QUEUE_NAME, json.dumps(task_user))
+             
+             # Ingest AI Answer
+             task_ai = {
+                 "note_id": ai_msg_id,
+                 "content": f"Cortex answered: {answer}",
+                 "source": "chat_assistant",
+                 "timestamp": datetime.now().isoformat()
+             }
+             await redis_client.lpush(QUEUE_NAME, json.dumps(task_ai))
+             await redis_client.aclose()
+        except Exception as e:
+             print(f"⚠️ Failed to ingest chat for search: {e}")
             
         return {
             "query": query,

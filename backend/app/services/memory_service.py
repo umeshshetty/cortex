@@ -98,9 +98,10 @@ class MemoryService:
         OPTIONAL MATCH (thought)-[:TRIGGERED_REFLECTION]->(reflection:Reflection)
         
         // Return aggregated result
+        // Penalty: If it's just a 'Conversation' (Chat log), penalty it by 0.8
         RETURN 
             thought.content AS thought_content,
-            score AS similarity,
+            score * (CASE WHEN 'Conversation' IN labels(thought) THEN 0.8 ELSE 1.0 END) AS similarity,
             collect(DISTINCT entity.name) AS related_entities,
             collect(DISTINCT reflection.content) AS reflections
         """

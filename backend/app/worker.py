@@ -50,6 +50,11 @@ async def process_task(task_data: dict):
     
     embedding = await vector_service.get_embedding(content)
     
+    
+    # Check source for labeling
+    source = task_data.get("source", "user")
+    is_chat = source.startswith("chat_")
+    
     cypher = """
     // 1. Create Thought Node with Metadata
     CREATE (t:Thought {
@@ -58,6 +63,11 @@ async def process_task(task_data: dict):
         source: $source,
         timestamp: datetime($timestamp)
     })
+    
+    // 1b. Label as Conversation if needed
+    FOREACH (ignoreMe IN CASE WHEN $is_chat THEN [1] ELSE [] END |
+        SET t:Conversation
+    )
     
     // 2. Set Vector Embedding (if available)
     FOREACH (ignoreMe IN CASE WHEN $embedding IS NOT NULL THEN [1] ELSE [] END |
@@ -85,20 +95,25 @@ async def process_task(task_data: dict):
     CREATE (t)-[:TRIGGERED_REFLECTION]->(r)
     """
     
-    # 3. Generate Reflection
-    print("   -> Generating Reflection...")
-    reflections = await entity_extractor.generate_reflection(content)
-    print(f"   -> Generated {len(reflections)} Questions")
+    # 3. Generate Reflection (Skip for Chat)
+    reflections = []
+    if not is_chat:
+        print("   -> Generating Reflection...")
+        reflections = await entity_extractor.generate_reflection(content)
+        print(f"   -> Generated {len(reflections)} Questions")
+    else:
+        print("   -> Skipping Reflection for Chat Log.")
 
     await graph_service.execute_query(cypher, {
         "note_id": str(note_id),
         "content": content,
-        "source": task_data.get("source", "user"),
-        "timestamp": task_data.get("timestamp"), # ISO string works with datetime()
+        "source": source,
+        "timestamp": task_data.get("timestamp"), 
         "embedding": embedding,
         "entities": entities,
         "relationships": relationships,
-        "reflections": reflections
+        "reflections": reflections,
+        "is_chat": is_chat
     })
     
     print(f"✅ Worker: Note {note_id} processed successfully.")

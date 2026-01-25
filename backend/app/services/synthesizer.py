@@ -101,23 +101,37 @@ class SynthesizerService:
              QUEUE_NAME = "cortex_memory_queue"
              redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
              
+             # Heuristic Filter: Don't ingest short/filler messages
+             def is_worth_saving(text: str) -> bool:
+                 if len(text.strip()) < 10: return False # Too short
+                 stopwords = {"hi", "hello", "thanks", "ok", "okay", "bye", "goodbye", "cool"}
+                 if text.lower().strip() in stopwords: return False
+                 return True
+
              # Ingest User Query
-             task_user = {
-                 "note_id": user_msg_id, # Use UUID
-                 "content": f"User said: {query}",
-                 "source": "chat_user",
-                 "timestamp": datetime.now().isoformat()
-             }
-             await redis_client.lpush(QUEUE_NAME, json.dumps(task_user))
+             if is_worth_saving(query):
+                 task_user = {
+                     "note_id": user_msg_id, # Use UUID
+                     "content": f"User said: {query}",
+                     "source": "chat_user",
+                     "timestamp": datetime.now().isoformat()
+                 }
+                 await redis_client.lpush(QUEUE_NAME, json.dumps(task_user))
+             else:
+                 print(f"🧹 Synthesizer: Skipped ingesting low-value user query: '{query}'")
              
              # Ingest AI Answer
-             task_ai = {
-                 "note_id": ai_msg_id,
-                 "content": f"Cortex answered: {answer}",
-                 "source": "chat_assistant",
-                 "timestamp": datetime.now().isoformat()
-             }
-             await redis_client.lpush(QUEUE_NAME, json.dumps(task_ai))
+             # We generally always save AI answers if they are substantive, 
+             # but applying the same filter prevents indexing "You're welcome."
+             if is_worth_saving(answer):
+                 task_ai = {
+                     "note_id": ai_msg_id,
+                     "content": f"Cortex answered: {answer}",
+                     "source": "chat_assistant",
+                     "timestamp": datetime.now().isoformat()
+                 }
+                 await redis_client.lpush(QUEUE_NAME, json.dumps(task_ai))
+             
              await redis_client.aclose()
         except Exception as e:
              print(f"⚠️ Failed to ingest chat for search: {e}")

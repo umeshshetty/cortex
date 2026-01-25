@@ -15,7 +15,14 @@ FOR (d:Device) REQUIRE d.hostname IS UNIQUE;
 CREATE INDEX device_type_index IF NOT EXISTS
 FOR (d:Device) ON (d.type);
 
-// 3. Interfaces (Ports)
+// 3. Messages (Conversational History)
+CREATE CONSTRAINT message_id_unique IF NOT EXISTS
+FOR (m:Message) REQUIRE m.id IS UNIQUE;
+
+CREATE INDEX message_session_index IF NOT EXISTS
+FOR (m:Message) ON (m.session_id);
+
+// 4. Interfaces (Ports)
 // Composite key might be better (device + name), but for simplicity:
 CREATE INDEX interface_name_index IF NOT EXISTS
 FOR (i:Interface) ON (i.name);

@@ -77,8 +77,19 @@ async def process_task(task_data: dict):
     MATCH (a:Entity {name: r.from})
     MATCH (b:Entity {name: r.to})
     MERGE (a)-[rel:RELATIONSHIP {type: r.type}]->(b)
+
+    // 5. Store Reflections
+    WITH t
+    UNWIND $reflections AS q
+    CREATE (r:Reflection {content: q, created_at: datetime()})
+    CREATE (t)-[:TRIGGERED_REFLECTION]->(r)
     """
     
+    # 3. Generate Reflection
+    print("   -> Generating Reflection...")
+    reflections = await entity_extractor.generate_reflection(content)
+    print(f"   -> Generated {len(reflections)} Questions")
+
     await graph_service.execute_query(cypher, {
         "note_id": str(note_id),
         "content": content,
@@ -86,7 +97,8 @@ async def process_task(task_data: dict):
         "timestamp": task_data.get("timestamp"), # ISO string works with datetime()
         "embedding": embedding,
         "entities": entities,
-        "relationships": relationships
+        "relationships": relationships,
+        "reflections": reflections
     })
     
     print(f"✅ Worker: Note {note_id} processed successfully.")

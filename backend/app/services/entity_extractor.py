@@ -27,6 +27,17 @@ Text to analyze:
 
 JSON Output:"""
 
+REFLECTION_PROMPT = """You are a Reflector Agent.
+Your job is to look at a user's thought and generate 1-2 thoughtful questions that would help clarify or expand on the idea.
+Do not ask generic questions. Be specific to the content.
+
+User's Thought:
+{input}
+
+Return ONLY the questions as a JSON list of strings.
+Example: ["Which specific project is this related to?", "Are there any deadlines associated with this?"]
+JSON Output:"""
+
 class EntityExtractor:
     async def extract_knowledge(self, text: str) -> Optional[Dict[str, Any]]:
         """
@@ -54,5 +65,34 @@ class EntityExtractor:
         except Exception as e:
             print(f"Entity Extraction Failed: {e}")
             return None
+
+    async def generate_reflection(self, text: str) -> List[str]:
+        """
+        Generate clarifying questions based on the text.
+        """
+        prompt = REFLECTION_PROMPT.format(input=text)
+        
+        response = await llm_client.chat(
+            prompt=prompt,
+            system_prompt="You are a precise JSON extractor. Return only valid JSON.",
+            session_id="reflection-generation"
+        )
+        
+        try:
+            clean = response.strip()
+            if clean.startswith("```"):
+                clean = clean.split("```")[1]
+                if clean.startswith("json"):
+                    clean = clean[4:]
+            clean = clean.strip()
+            
+            questions = json.loads(clean)
+            if isinstance(questions, list):
+                return questions
+            return []
+        except Exception as e:
+            print(f"Reflection Generation Failed: {e}")
+            return []
+
 
 entity_extractor = EntityExtractor()

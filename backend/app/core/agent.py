@@ -32,12 +32,63 @@ async def search_memory(query: str) -> str:
     
     return context_str
 
+@tool
+async def summarize_project(project_name: str) -> str:
+    """
+    Summarize all thoughts and entities related to a specific Project.
+    Useful when the user asks for a status report on "Project X".
+    """
+    from app.services.graph_service import graph_service
+    
+    cypher = """
+    MATCH (p:Entity {type: 'Project'})<-[:MENTIONS]-(t:Thought)
+    WHERE p.name CONTAINS $project
+    RETURN t.content AS note, t.timestamp AS time
+    ORDER BY t.timestamp DESC
+    LIMIT 20
+    """
+    results = await graph_service.execute_query(cypher, {"project": project_name})
+    
+    if not results:
+        return f"No notes found for project '{project_name}'."
+        
+    summary = f"Summary for Project '{project_name}':\n"
+    for r in results:
+        summary += f"- {r['time']}: {r['note']}\n"
+    
+    return summary
+
+@tool
+async def daily_log() -> str:
+    """
+    Retrieve all thoughts created Today.
+    Useful for generating a daily standup or snapshot.
+    """
+    from app.services.graph_service import graph_service
+    
+    cypher = """
+    MATCH (t:Thought)
+    WHERE date(t.timestamp) = date()
+    RETURN t.content AS note, t.timestamp AS time
+    ORDER BY t.timestamp DESC
+    """
+    results = await graph_service.execute_query(cypher)
+    
+    if not results:
+        return "No thoughts recorded today."
+        
+    log = "Daily Log (Today):\n"
+    for r in results:
+        log += f"- {r['time']}: {r['note']}\n"
+    
+    return log
+
 # 2. Define State
 class AgentState(TypedDict):
     messages: Annotated[list, "The conversation history"]
 
 # 3. Define Nodes
-tools = [search_memory]
+tools = [search_memory, summarize_project, daily_log]
 llm = ChatOpenAI(model="gpt-4o", api_key=settings.OPENAI_API_KEY)
 llm_with_tools = llm.bind_tools(tools)
 

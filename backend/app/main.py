@@ -106,6 +106,23 @@ async def upsert_profile(profile: UserProfileCreate):
     return result
 
 # =============================================================================
+# Chat & RAG Endpoints
+# =============================================================================
+
+from app.services.synthesizer import synthesizer_service
+
+class AskRequest(BaseModel):
+    query: str
+
+@app.post("/api/chat/ask")
+async def ask_cortex(request: AskRequest):
+    """
+    Ask Cortex a question. 
+    Performs GraphRAG (Vector + Graph Search) -> LLM Synthesis.
+    """
+    return await synthesizer_service.synthesize_answer(request.query)
+
+# =============================================================================
 # LLM-Powered Profile Extraction
 # =============================================================================
 

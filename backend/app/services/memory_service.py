@@ -32,7 +32,12 @@ class MemoryService:
             # Trigger Background Worker
             try:
                 redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-                task = {"note_id": note.id, "content": note.content}
+                task = {
+                    "note_id": note.id, 
+                    "content": note.content,
+                    "source": note.source,
+                    "timestamp": note.created_at.isoformat()
+                }
                 await redis_client.lpush(QUEUE_NAME, json.dumps(task))
                 await redis_client.aclose() # Close connection (or use pool)
             except Exception as e:

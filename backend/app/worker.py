@@ -51,8 +51,13 @@ async def process_task(task_data: dict):
     embedding = await vector_service.get_embedding(content)
     
     cypher = """
-    // 1. Create Thought Node
-    CREATE (t:Thought {id: $note_id, content: $content, timestamp: datetime()})
+    // 1. Create Thought Node with Metadata
+    CREATE (t:Thought {
+        id: $note_id, 
+        content: $content, 
+        source: $source,
+        timestamp: datetime($timestamp)
+    })
     
     // 2. Set Vector Embedding (if available)
     FOREACH (ignoreMe IN CASE WHEN $embedding IS NOT NULL THEN [1] ELSE [] END |
@@ -75,8 +80,10 @@ async def process_task(task_data: dict):
     """
     
     await graph_service.execute_query(cypher, {
-        "note_id": str(note_id), # note.id is int, maybe convert to str for UUID-like usage or keep int
+        "note_id": str(note_id),
         "content": content,
+        "source": task_data.get("source", "user"),
+        "timestamp": task_data.get("timestamp"), # ISO string works with datetime()
         "embedding": embedding,
         "entities": entities,
         "relationships": relationships

@@ -1,0 +1,35 @@
+.note-input {
+    padding: var(--space-xl);
+}
+
+.note-input-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.note-input-icon {
+    font-size: 1.25rem;
+}
+
+.note-input-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.note-textarea {
+    min-height: 120px;
+    margin-bottom: var(--space-md);
+}
+
+.note-input-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.note-input-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}

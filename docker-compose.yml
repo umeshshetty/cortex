@@ -5,6 +5,22 @@ version: '3.8'
 
 services:
   # ==========================================================================
+  # Frontend (React + Vite)
+  # ==========================================================================
+  frontend:
+    build: ./frontend
+    container_name: cortex-frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - cortex-network
+
+  # ==========================================================================
   # Backend API
   # ==========================================================================
   backend:

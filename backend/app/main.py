@@ -103,6 +103,27 @@ async def upsert_profile(profile: UserProfileCreate):
     result = await profile_service.upsert_profile(profile)
     return result
 
+# =============================================================================
+# LLM-Powered Profile Extraction
+# =============================================================================
+
+from app.services.profile_extractor import profile_extractor
+
+class ExtractProfileRequest(BaseModel):
+    description: str  # Natural language description of the user
+
+@app.post("/api/profile/extract")
+async def extract_profile(request: ExtractProfileRequest):
+    """
+    Extract profile from natural language using LLM.
+    
+    Example: "I'm Alex, a backend developer who loves Python and hiking"
+    → Extracts: {name: "Alex", role: "Backend Developer", traits: ["Python", "hiking"]}
+    → Saves to Neo4j
+    """
+    result = await profile_extractor.extract_and_save(request.description)
+    return result
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -13,6 +13,7 @@ from app.core.llm_tier import llm_client
 from app.core.database import init_db
 from app.services.graph_service import graph_service
 from app.services.memory_service import memory_service
+from app.services.vector_service import vector_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +22,7 @@ async def lifespan(app: FastAPI):
     print("🚀 Cortex starting up...")
     await init_db()  # Initialize TimeDB (Postgres Tables)
     await graph_service.connect() # Initialize GraphDB (Neo4j)
+    await vector_service.create_vector_index() # Initialize Vector Index
     yield
     # Shutdown
     print("😴 Cortex shutting down...")

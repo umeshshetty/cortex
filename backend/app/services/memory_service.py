@@ -9,6 +9,13 @@ from sqlalchemy.future import select
 from app.core.database import AsyncSessionLocal
 from app.models.memory import Note
 from app.services.graph_service import graph_service
+import json
+import redis.asyncio as redis
+from app.core.config import settings
+from app.services.vector_service import vector_service
+
+QUEUE_NAME = "cortex_memory_queue"
+
 
 class MemoryService:
     
@@ -22,13 +29,20 @@ class MemoryService:
             await session.commit()
             await session.refresh(note)
             
-            # FUTURE: Trigger GraphRAG indexing here (background task)
-            
+            # Trigger Background Worker
+            try:
+                redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+                task = {"note_id": note.id, "content": note.content}
+                await redis_client.lpush(QUEUE_NAME, json.dumps(task))
+                await redis_client.aclose() # Close connection (or use pool)
+            except Exception as e:
+                print(f"⚠️ Failed to queue background task: {e}")
+
             return {
                 "id": note.id,
                 "content": note.content,
                 "timestamp": note.created_at,
-                "status": "saved"
+                "status": "saved_and_queued"
             }
 
     async def get_recent_notes(self, limit: int = 10) -> List[Dict[str, Any]]:
@@ -52,15 +66,37 @@ class MemoryService:
 
     async def search_graph(self, query: str) -> List[Dict[str, Any]]:
         """
-        Semantic/Graph Search (Placeholder for full GraphRAG).
+        Semantic/Graph Search (GraphRAG).
+        1. Vector Search for relevant 'Thoughts'
+        2. Graph Traversal to find connected Entities
         """
-        # For now, just a simple Cypher query example
-        # In real GraphRAG, this would do vector search + traversal
+        # 1. Get Vector Results (Semantic Match)
+        # "BGP Issues" -> matches Thought("Network outage in NY...")
+        embedding = await vector_service.get_embedding(query)
+        if not embedding:
+             # Fallback to Text Search if no embedding available
+             cypher = """
+             MATCH (n:Entity)
+             WHERE n.name CONTAINS $query
+             RETURN n AS node, 1.0 AS score LIMIT 5
+             """
+             return await graph_service.execute_query(cypher, {"query": query})
+
+        # 2. Hybrid GraphRAG Query
+        # Find Thoughts similar to query, then grab the Entities they talk about.
         cypher = """
-        MATCH (n:Entity)
-        WHERE n.name CONTAINS $query
-        RETURN n LIMIT 5
+        CALL db.index.vector.queryNodes('thought_embeddings', 5, $embedding)
+        YIELD node AS thought, score
+        
+        // Traverse to find context
+        MATCH (thought)-[:MENTIONS]->(entity:Entity)
+        
+        // Return aggregated result
+        RETURN 
+            thought.content AS thought_content,
+            score AS similarity,
+            collect(entity.name) AS related_entities
         """
-        return await graph_service.execute_query(cypher, {"query": query})
+        return await graph_service.execute_query(cypher, {"embedding": embedding})
 
 memory_service = MemoryService()
